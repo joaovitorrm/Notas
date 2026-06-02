@@ -1,44 +1,97 @@
 //import { invoke } from "@tauri-apps/api/core";
 
-//import { useEffect, useState } from "react";
-import { useCallback, useState } from 'react';
-import Postit, { PostitData } from './components/Postit/Postit';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ToolBar from "./components/ToolBar/ToolBar";
+import { useDatabase } from './context/DatabaseContext';
+import { ItemData, TabData } from './types';
+import Tabs from './components/Tabs/Tabs';
+import Postit from './components/Postit/Postit';
 
 function App() {
+  const { db, ready } = useDatabase();
+  const [tabs, setTabs] = useState<TabData[]>([]);
+  const [items, setItems] = useState<ItemData[]>([]);
+  const [activeTabId, setActiveTabId] = useState<string>("");
+  const defaultTabCreated = useRef(false);
 
-  const [postitArr, setPostItArr] = useState<Map<string, PostitData>>(new Map());
+  // Inicialização — roda uma vez quando o banco está pronto
+  useEffect(() => {
+    if (!ready) return;
 
-  const addPostIt = useCallback(() => {
-    setPostItArr((prev) => new Map(prev).set((prev.size+1).toString(), {
-      title: "", 
-      description: "", 
-      onDelete: () => onDelete((prev.size+1).toString())
-    }))
-  }, []);
+    db!.getTabs().then(async fetchedTabs => {
+      if (fetchedTabs.length === 0 && !defaultTabCreated.current) {
+        defaultTabCreated.current = true;
+        await db!.createTab({
+          color: "hsl(0, 0%, 0%)",
+          title: "Página 1",
+          viewType: "postit",
+          id: crypto.randomUUID(),
+          position: 1
+        });
+        const newTabs = await db!.getTabs();
+        setTabs(newTabs);
+        setActiveTabId(newTabs[0].id); // ← define aqui direto
+      } else {
+        setTabs(fetchedTabs);
+        setActiveTabId(fetchedTabs[0].id); // ← define aqui direto
+      }
+    });
+  }, [ready]);
 
-  const onDelete = useCallback((id : string) => {    
-    setPostItArr((prev) => {
-      const next = new Map(prev);
-      next.delete(id);
-      return next;
-    })
-  }, []);
+  // Carrega items quando a tab ativa muda
+  useEffect(() => {
+    if (activeTabId === "") return;
+    db!.getItemsByTab(activeTabId).then(setItems);
+  }, [activeTabId]);
+
+  const addNote = useCallback(async () => {
+    if (activeTabId === "") return;
+    await db!.saveItem({
+      id: crypto.randomUUID(),
+      tabId: activeTabId,
+      color: "hsl(0, 50%, 50%)",
+      fontColor: "hsl(0, 0%, 0%)",
+      description: "",
+      sortOrder: 1,
+      title: "",
+      posX: 20,
+      posY: 20
+    });
+    db!.getItemsByTab(activeTabId).then(setItems);
+  }, [activeTabId]);
+
+  const onUpdate = useCallback((i: ItemData) => {
+    if (!ready) return;
+    db!.saveItem(i)
+  }, [ready])
+
+  const onDelete = useCallback(async (i : string) => {
+    if (!ready) return;
+    await db!.deleteItem(i);
+    db!.getItemsByTab(activeTabId).then(setItems);
+  }, [ready, activeTabId])
+
+  if (!ready) return <p>Carregando...</p>;
 
   return (
     <main className="main-container">
-
       <div className='search-container'>
-        <input type="text" placeholder='Pesquisar nota'/>
+        <input type="text" placeholder='Pesquisar nota' />
       </div>
 
       <div className='main-view'>
-        {[...postitArr.entries()].map(([id, p]) => <Postit key={id} postit={p} />)}
+        {items.map(i => (
+          <Postit
+            item={i}
+            postit={{ onDelete: onDelete, onUpdate: onUpdate }}
+            key={i.id}
+          />
+        ))}
       </div>
-      
-      <ToolBar
-        onAdd={addPostIt}
-      />
+
+      <Tabs activeId={activeTabId} tabs={tabs} /* onTabChange={setActiveTabId} */ />
+
+      <ToolBar onAdd={addNote} />
     </main>
   );
 }

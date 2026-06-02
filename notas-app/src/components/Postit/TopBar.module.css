@@ -15,6 +15,7 @@
     }
     & .move-icon {
         cursor: grab;
+        user-select: none;
     }
 
     & .delete-icon {

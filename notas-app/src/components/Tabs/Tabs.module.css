@@ -1,0 +1,26 @@
+.tabs {
+    display: flex;
+    position: absolute;
+    align-items: center;
+    bottom: 3rem;
+    gap: .5rem;
+    padding-inline: .5rem;
+    height: 2rem;
+    overflow-x: auto;
+    max-width: 100%;
+    & .tab {
+        background-color: var(--secondary-color);
+        padding-inline: .5rem;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-top-right-radius: .5rem;
+        border-top-left-radius: .5rem;
+        cursor: pointer;
+        width: 6rem;
+        &.active {
+            background-color: var(--accent-color);
+        }
+    }
+}

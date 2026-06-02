@@ -24,4 +24,5 @@ tauri-plugin-fs = "2"       # leitura/escrita de arquivos
 tauri-plugin-dialog = "2"   # diálogos de salvar/abrir
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 

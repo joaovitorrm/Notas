@@ -1,41 +1,51 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./Postit.module.css";
 import TopBar from './TopBar';
+import { ItemData } from "../../types";
 
 type PostitProps = {
-    postit: PostitData
+    item: ItemData;
+    postit: PostitData;
 }
 
 type Position = { x: number; y: number }
 
 export type PostitData = {
-    title: string;
-    description: string;
-    onDelete: Function;
+    onDelete: (id: string) => void;
+    onUpdate: (i: ItemData) => void;
 }
 
-export default function Postit({ postit }: PostitProps) {
+export default function Postit({ item, postit }: PostitProps) {
 
-    const [title, setTitle] = useState(postit.title);
+    const [title, setTitle] = useState(item.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const inputTitleRef = useRef<HTMLTextAreaElement>(null);
 
-    const [description, setDescription] = useState(postit.description)
+    const [description, setDescription] = useState(item.description)
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const inputDescriptionRef = useRef<HTMLTextAreaElement>(null);
 
+    const [isDragging, setIsDragging] = useState<boolean>(false);
     const [isPostitHover, setIsPostitHover] = useState<boolean>(false);
     const zIndex = useRef<number>(1);
+
+    const getUpdate = (): ItemData => {
+        return { ...item, posX: pos.x, posY: pos.y, title, description };
+    }
 
     useEffect(() => {
         if (isEditingTitle) {
             inputTitleRef.current?.select();
+        } else {
+            postit.onUpdate(getUpdate());
         }
     }, [isEditingTitle])
 
     useEffect(() => {
         if (isEditingDescription) {
             inputDescriptionRef.current?.select();
+        } else {
+            postit.onUpdate(getUpdate());
         }
     }, [isEditingDescription])
 
@@ -70,7 +80,7 @@ export default function Postit({ postit }: PostitProps) {
     }, [])
 
 
-    const [pos, setPos] = useState<Position>({ x: 20, y: 80 })
+    const [pos, setPos] = useState<Position>({ x: item.posX, y: item.posY })
     const dragOffset = useRef<Position>({ x: 0, y: 0 })
 
     const onMouseDown = (e: React.MouseEvent) => {
@@ -81,18 +91,24 @@ export default function Postit({ postit }: PostitProps) {
         }
 
         zIndex.current = 3;
+        setIsDragging(true);
+
+        let currentPos = { ...pos } // ← rastreia a posição atual
 
         const onMouseMove = (e: MouseEvent) => {
-            setPos({
+            currentPos = {
                 x: e.clientX - dragOffset.current.x,
                 y: e.clientY - dragOffset.current.y,
-            })
+            }
+            setPos(currentPos)
         }
 
         const onMouseUp = () => {
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
             zIndex.current = 1;
+            postit.onUpdate({ ...item, posX: currentPos.x, posY: currentPos.y, title, description }) // ← usa currentPos
+            setIsDragging(false);
         }
 
         window.addEventListener('mousemove', onMouseMove);
@@ -100,7 +116,7 @@ export default function Postit({ postit }: PostitProps) {
     }
 
     return (
-        <div className={styles["postit"]} onMouseEnter={() => handleHoverEnter()} onMouseLeave={() => handleHoverLeave()}
+        <div key={item.id} className={styles["postit"]} onMouseEnter={() => handleHoverEnter()} onMouseLeave={() => handleHoverLeave()}
             style={{
                 position: "absolute",
                 left: pos.x,
@@ -108,7 +124,7 @@ export default function Postit({ postit }: PostitProps) {
                 zIndex: zIndex.current
             }}
         >
-            {isPostitHover && <TopBar onMouseDown={onMouseDown} onDelete={postit.onDelete}/>}
+            {(isPostitHover || isDragging) && <TopBar onMouseDown={onMouseDown} onDelete={() => postit.onDelete(item.id)} />}
             {isEditingTitle ?
                 <textarea
                     className={styles["title"]}
@@ -137,8 +153,9 @@ export default function Postit({ postit }: PostitProps) {
                     className={styles["description"]}>{description}
                 </p>
             }
-            <svg className={styles["copy"]} onClick={() => copy(description)} xmlns="http://www.w3.org/2000/svg" id="Layer_1" height="24" viewBox="0 0 24 24" width="24" data-name="Layer 1"><path d="m13 20a5.006 5.006 0 0 0 5-5v-8.757a3.972 3.972 0 0 0 -1.172-2.829l-2.242-2.242a3.972 3.972 0 0 0 -2.829-1.172h-4.757a5.006 5.006 0 0 0 -5 5v10a5.006 5.006 0 0 0 5 5zm-9-5v-10a3 3 0 0 1 3-3s4.919.014 5 .024v1.976a2 2 0 0 0 2 2h1.976c.01.081.024 9 .024 9a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3-3zm18-7v11a5.006 5.006 0 0 1 -5 5h-9a1 1 0 0 1 0-2h9a3 3 0 0 0 3-3v-11a1 1 0 0 1 2 0z" />
-                <path xmlns="http://www.w3.org/2000/svg" d="m13 20a5.006 5.006 0 0 0 5-5v-8.757a3.972 3.972 0 0 0 -1.172-2.829l-2.242-2.242a3.972 3.972 0 0 0 -2.829-1.172h-4.757a5.006 5.006 0 0 0 -5 5v10a5.006 5.006 0 0 0 5 5zm-9-5v-10a3 3 0 0 1 3-3s4.919.014 5 .024v1.976a2 2 0 0 0 2 2h1.976c.01.081.024 9 .024 9a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3-3zm18-7v11a5.006 5.006 0 0 1 -5 5h-9a1 1 0 0 1 0-2h9a3 3 0 0 0 3-3v-11a1 1 0 0 1 2 0z" /></svg>
+            {description.length > 0 && <svg className={styles["copy"]} onClick={() => copy(description)} xmlns="http://www.w3.org/2000/svg" id="Layer_1" height="24" viewBox="0 0 24 24" width="24" data-name="Layer 1"><path d="m13 20a5.006 5.006 0 0 0 5-5v-8.757a3.972 3.972 0 0 0 -1.172-2.829l-2.242-2.242a3.972 3.972 0 0 0 -2.829-1.172h-4.757a5.006 5.006 0 0 0 -5 5v10a5.006 5.006 0 0 0 5 5zm-9-5v-10a3 3 0 0 1 3-3s4.919.014 5 .024v1.976a2 2 0 0 0 2 2h1.976c.01.081.024 9 .024 9a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3-3zm18-7v11a5.006 5.006 0 0 1 -5 5h-9a1 1 0 0 1 0-2h9a3 3 0 0 0 3-3v-11a1 1 0 0 1 2 0z" />
+                <path xmlns="http://www.w3.org/2000/svg" d="m13 20a5.006 5.006 0 0 0 5-5v-8.757a3.972 3.972 0 0 0 -1.172-2.829l-2.242-2.242a3.972 3.972 0 0 0 -2.829-1.172h-4.757a5.006 5.006 0 0 0 -5 5v10a5.006 5.006 0 0 0 5 5zm-9-5v-10a3 3 0 0 1 3-3s4.919.014 5 .024v1.976a2 2 0 0 0 2 2h1.976c.01.081.024 9 .024 9a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3-3zm18-7v11a5.006 5.006 0 0 1 -5 5h-9a1 1 0 0 1 0-2h9a3 3 0 0 0 3-3v-11a1 1 0 0 1 2 0z" />
+            </svg>}
         </div>
     )
 }

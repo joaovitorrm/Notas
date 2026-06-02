@@ -14,6 +14,10 @@
   --accent-color: light-dark(hsl(100, 50%, 50%), hsl(100, 50%, 50%));
 }
 
+html, body {
+  overflow: hidden;
+}
+
 .main-container {
   background-color: var(--bg-color);
   color: var(--text-color);
