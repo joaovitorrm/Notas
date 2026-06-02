@@ -1,0 +1,23 @@
+.top-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: absolute;
+    bottom: 100%;
+    width: 100%;
+    background-color: var(--secondary-color);
+    border-top-right-radius: .4rem;
+    border-top-left-radius: .4rem;
+    gap: .5rem;
+    height: 1.6rem;
+    & .move-icon, .delete-icon {
+        filter: invert();
+    }
+    & .move-icon {
+        cursor: grab;
+    }
+
+    & .delete-icon {
+        cursor: pointer;
+    }
+}

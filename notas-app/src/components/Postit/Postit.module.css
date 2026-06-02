@@ -38,9 +38,10 @@
 
     & .copy {
         position: absolute;
-        right: 0;
-        bottom: .2rem;
+        right: .2rem;
+        bottom: .4rem;
         cursor: grab;
+        filter: invert();
     }
 }
 

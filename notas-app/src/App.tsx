@@ -35,9 +35,7 @@ function App() {
       <div className='main-view'>
         {[...postitArr.entries()].map(([id, p]) => <Postit key={id} postit={p} />)}
       </div>
-
       
-
       <ToolBar
         onAdd={addPostIt}
       />
