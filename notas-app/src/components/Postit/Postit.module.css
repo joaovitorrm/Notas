@@ -1,0 +1,50 @@
+.postit {
+    width: 12rem;
+    height: 12rem;
+    background-color: red;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    & .title {
+        flex-basis: 25%;
+        font-size: 1.4rem;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    & .description {
+        flex: 1;
+        padding: .3rem;
+        text-align: start;
+    }
+
+    & textarea {
+        background-color: transparent;
+    }
+
+    & .title,
+    .description {
+        word-wrap: break-word;
+
+        &:hover {
+            outline: 1px solid black;
+            outline-offset: -2px;
+        }
+    }
+
+    & .copy {
+        position: absolute;
+        right: 0;
+        bottom: .2rem;
+        cursor: grab;
+    }
+}
+
+.cursor-copy,
+.cursor-copy * {
+    cursor: grabbing !important;
+}
