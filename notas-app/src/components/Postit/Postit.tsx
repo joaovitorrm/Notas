@@ -27,6 +27,7 @@ export default function Postit({ item, postit }: PostitProps) {
 
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [isPostitHover, setIsPostitHover] = useState<boolean>(false);
+    const [isMinimized, setIsMinimized] = useState<boolean>(false);
     const zIndex = useRef<number>(1);
 
     const getUpdate = (): ItemData => {
@@ -69,6 +70,10 @@ export default function Postit({ item, postit }: PostitProps) {
         }
     }, []);
 
+    const handleMinimize = useCallback(() => {
+        setIsMinimized((prev) => !prev);
+    }, [])
+
     const handleHoverEnter = useCallback(() => {
         zIndex.current = 2;
         setIsPostitHover(true);
@@ -78,7 +83,6 @@ export default function Postit({ item, postit }: PostitProps) {
         zIndex.current = 1;
         setIsPostitHover(false);
     }, [])
-
 
     const [pos, setPos] = useState<Position>({ x: item.posX, y: item.posY })
     const dragOffset = useRef<Position>({ x: 0, y: 0 })
@@ -116,7 +120,7 @@ export default function Postit({ item, postit }: PostitProps) {
     }
 
     return (
-        <div key={item.id} className={styles["postit"]} onMouseEnter={() => handleHoverEnter()} onMouseLeave={() => handleHoverLeave()}
+        <div key={item.id} className={`${styles["postit"]} ${isMinimized && styles["minimized"]}`} onMouseEnter={() => handleHoverEnter()} onMouseLeave={() => handleHoverLeave()}
             style={{
                 position: "absolute",
                 left: pos.x,
@@ -124,7 +128,8 @@ export default function Postit({ item, postit }: PostitProps) {
                 zIndex: zIndex.current
             }}
         >
-            {(isPostitHover || isDragging) && <TopBar onMouseDown={onMouseDown} onDelete={() => postit.onDelete(item.id)} />}
+            {(isPostitHover || isDragging) && <TopBar onMinimize={handleMinimize} onMouseDown={onMouseDown} onDelete={() => postit.onDelete(item.id)} />}
+
             {isEditingTitle ?
                 <textarea
                     className={styles["title"]}
@@ -139,21 +144,24 @@ export default function Postit({ item, postit }: PostitProps) {
                     onDoubleClick={() => setIsEditingTitle(true)}>{title}
                 </h2>
             }
-            {isEditingDescription ?
-                <textarea
-                    className={styles["description"]}
-                    value={description}
-                    onKeyDown={(e) => handleClose(e, "description")}
-                    onChange={e => setDescription(e.target.value)}
-                    ref={inputDescriptionRef}
-                    onBlur={() => setIsEditingDescription(false)}>
-                </textarea> :
-                <p
-                    onDoubleClick={() => setIsEditingDescription(true)}
-                    className={styles["description"]}>{description}
-                </p>
-            }
-            {description.length > 0 && <svg className={styles["copy"]} onClick={() => copy(description)} xmlns="http://www.w3.org/2000/svg" id="Layer_1" height="24" viewBox="0 0 24 24" width="24" data-name="Layer 1"><path d="m13 20a5.006 5.006 0 0 0 5-5v-8.757a3.972 3.972 0 0 0 -1.172-2.829l-2.242-2.242a3.972 3.972 0 0 0 -2.829-1.172h-4.757a5.006 5.006 0 0 0 -5 5v10a5.006 5.006 0 0 0 5 5zm-9-5v-10a3 3 0 0 1 3-3s4.919.014 5 .024v1.976a2 2 0 0 0 2 2h1.976c.01.081.024 9 .024 9a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3-3zm18-7v11a5.006 5.006 0 0 1 -5 5h-9a1 1 0 0 1 0-2h9a3 3 0 0 0 3-3v-11a1 1 0 0 1 2 0z" />
+
+            {!isMinimized &&
+                (isEditingDescription ?
+                    <textarea
+                        className={styles["description"]}
+                        value={description}
+                        onKeyDown={(e) => handleClose(e, "description")}
+                        onChange={e => setDescription(e.target.value)}
+                        ref={inputDescriptionRef}
+                        onBlur={() => setIsEditingDescription(false)}>
+                    </textarea> :
+                    <p
+                        onDoubleClick={() => setIsEditingDescription(true)}
+                        className={styles["description"]}>{description}
+                    </p>
+                )}
+
+            {!isMinimized && description.length > 0 && <svg className={styles["copy"]} onClick={() => copy(description)} xmlns="http://www.w3.org/2000/svg" id="Layer_1" height="24" viewBox="0 0 24 24" width="24" data-name="Layer 1"><path d="m13 20a5.006 5.006 0 0 0 5-5v-8.757a3.972 3.972 0 0 0 -1.172-2.829l-2.242-2.242a3.972 3.972 0 0 0 -2.829-1.172h-4.757a5.006 5.006 0 0 0 -5 5v10a5.006 5.006 0 0 0 5 5zm-9-5v-10a3 3 0 0 1 3-3s4.919.014 5 .024v1.976a2 2 0 0 0 2 2h1.976c.01.081.024 9 .024 9a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3-3zm18-7v11a5.006 5.006 0 0 1 -5 5h-9a1 1 0 0 1 0-2h9a3 3 0 0 0 3-3v-11a1 1 0 0 1 2 0z" />
                 <path xmlns="http://www.w3.org/2000/svg" d="m13 20a5.006 5.006 0 0 0 5-5v-8.757a3.972 3.972 0 0 0 -1.172-2.829l-2.242-2.242a3.972 3.972 0 0 0 -2.829-1.172h-4.757a5.006 5.006 0 0 0 -5 5v10a5.006 5.006 0 0 0 5 5zm-9-5v-10a3 3 0 0 1 3-3s4.919.014 5 .024v1.976a2 2 0 0 0 2 2h1.976c.01.081.024 9 .024 9a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3-3zm18-7v11a5.006 5.006 0 0 1 -5 5h-9a1 1 0 0 1 0-2h9a3 3 0 0 0 3-3v-11a1 1 0 0 1 2 0z" />
             </svg>}
         </div>

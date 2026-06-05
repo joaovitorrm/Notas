@@ -6,6 +6,7 @@
     display: flex;
     flex-direction: column;
     position: relative;
+    outline: 1px solid var(--bg-color);
 
     & .title {
         flex-basis: 25%;
@@ -42,6 +43,14 @@
         bottom: .4rem;
         cursor: grab;
         filter: invert();
+    }
+
+    &.minimized {
+        height: 3rem;
+
+        & .title {
+            flex: 1;
+        }
     }
 }
 

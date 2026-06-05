@@ -21,4 +21,9 @@
     & .delete-icon {
         cursor: pointer;
     }
+
+    & .minimize-icon {
+        user-select: none;
+        cursor: pointer;
+    }
 }

@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql"
-import { TabData, ItemData } from "./types"
+import { TabData, ItemData, TabViewType } from "./types"
 
 export class DatabaseConnection {
 
@@ -51,8 +51,8 @@ export class DatabaseConnection {
     }
 
     // Tabs
-    public async getTabs(): Promise<TabData[]> {
-        return this.db.select("SELECT * FROM tabs ORDER BY position")
+    public async getTabsByView(viewType: TabViewType): Promise<TabData[]> {
+        return this.db.select("SELECT * FROM tabs WHERE view_type = $1 ORDER BY position", [viewType])
     }
 
     public async createTab(tab: TabData): Promise<void> {
@@ -93,6 +93,12 @@ export class DatabaseConnection {
             [item.id, item.tabId, item.title, item.description, item.color, item.fontColor, item.posX, item.posY, item.sortOrder]
         )
     }
+
+    public async saveTab(tab: TabData): Promise<void> {
+        await this.db.execute(
+            `UPDATE tabs SET color = $1, title = $2, position = $3 WHERE id = $4`, [tab.color, tab.title, tab.position, tab.id]
+        )
+    } 
 
     public async deleteItem(id: string): Promise<void> {
         await this.db.execute("DELETE FROM items WHERE id = $1", [id])

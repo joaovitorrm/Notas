@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ToolBar from "./components/ToolBar/ToolBar";
 import { useDatabase } from './context/DatabaseContext';
-import { ItemData, TabData } from './types';
+import { ItemData, TabData, TabViewType } from './types';
 import Tabs from './components/Tabs/Tabs';
 import Postit from './components/Postit/Postit';
 
@@ -12,13 +12,14 @@ function App() {
   const [tabs, setTabs] = useState<TabData[]>([]);
   const [items, setItems] = useState<ItemData[]>([]);
   const [activeTabId, setActiveTabId] = useState<string>("");
+  const currentViewType = useRef<TabViewType>("postit");
   const defaultTabCreated = useRef(false);
 
   // Inicialização — roda uma vez quando o banco está pronto
   useEffect(() => {
     if (!ready) return;
 
-    db!.getTabs().then(async fetchedTabs => {
+    db!.getTabsByView(currentViewType.current).then(async fetchedTabs => {
       if (fetchedTabs.length === 0 && !defaultTabCreated.current) {
         defaultTabCreated.current = true;
         await db!.createTab({
@@ -28,7 +29,7 @@ function App() {
           id: crypto.randomUUID(),
           position: 1
         });
-        const newTabs = await db!.getTabs();
+        const newTabs = await db!.getTabsByView(currentViewType.current);
         setTabs(newTabs);
         setActiveTabId(newTabs[0].id); // ← define aqui direto
       } else {
@@ -60,10 +61,26 @@ function App() {
     db!.getItemsByTab(activeTabId).then(setItems);
   }, [activeTabId]);
 
-  const onUpdate = useCallback((i: ItemData) => {
+  const saveItems = useCallback(async (i: ItemData) => {
     if (!ready) return;
-    db!.saveItem(i)
-  }, [ready])
+    await db!.saveItem(i);
+  }, [ready]);
+
+  const saveTab = useCallback(async (t: TabData) => {
+    if (!ready) return;
+    console.log("save");
+    await db!.saveTab(t);
+  }, [ready]);
+
+  const setTabId = useCallback((id: string) => {
+    setActiveTabId(id);
+  }, [])
+
+  const createTab = useCallback(async () => {
+    if (!ready) return;
+    await db!.createTab({color: "", id: crypto.randomUUID(), position: tabs.length++, title: "Página " + tabs.length++, viewType: currentViewType.current});
+    db!.getTabsByView(currentViewType.current).then(setTabs);
+  }, [ready, currentViewType.current, tabs.length])
 
   const onDelete = useCallback(async (i : string) => {
     if (!ready) return;
@@ -83,13 +100,13 @@ function App() {
         {items.map(i => (
           <Postit
             item={i}
-            postit={{ onDelete: onDelete, onUpdate: onUpdate }}
+            postit={{ onDelete: onDelete, onUpdate: saveItems }}
             key={i.id}
           />
         ))}
       </div>
 
-      <Tabs activeId={activeTabId} tabs={tabs} /* onTabChange={setActiveTabId} */ />
+      <Tabs activeId={activeTabId} tabs={tabs} saveTab={saveTab} createTab={createTab} setActiveTab={setTabId} /* onTabChange={setActiveTabId} */ />
 
       <ToolBar onAdd={addNote} />
     </main>

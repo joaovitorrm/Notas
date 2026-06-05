@@ -1,16 +1,41 @@
+import { useEffect, useRef, useState } from "react";
 import { TabData } from "../../types";
 
 import styles from "./tabs.module.css"
 
 type TabProps = {
-    tab : TabData
-    active: boolean
+    tab: TabData;
+    active: boolean;
+    saveTab: (t: TabData) => void;
+    setActiveTab: Function;
 }
 
-export default function Tab({tab, active} : TabProps) {
+export default function Tab({ tab, active, saveTab, setActiveTab }: TabProps) {
+
+    const [title, setTitle] = useState<string>(tab.title);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const [isEditing, setIsEditing] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.select();
+        }
+    }, [isEditing])
+
+    useEffect(() => {
+        saveTab({...tab, title});
+    }, [title])
+
     return (
-        <div className={`${styles["tab"]} ${active ? styles["active"] : ""}`}>
-            {tab.title}
+        <div 
+            title={title} 
+            className={`${styles["tab"]} ${active ? styles["active"] : ""}`} 
+            onDoubleClick={() => setIsEditing(true)} 
+            onBlur={() => setIsEditing(false)}
+            onClick={() => setActiveTab(tab.id)}
+        >
+            <span>{isEditing ? <input type="text" ref={inputRef} value={title} onChange={((e) => setTitle(e.target.value))}></input> : <>{title}</>}</span>
         </div>
     )
 }
