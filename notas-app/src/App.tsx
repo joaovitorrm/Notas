@@ -6,6 +6,8 @@ import { useDatabase } from './context/DatabaseContext';
 import { ItemData, TabData, TabViewType } from './types';
 import Tabs from './components/Tabs/Tabs';
 import Postit from './components/Postit/Postit';
+import { useMousePosition } from './hooks/useMouseMove';
+import ContextMenu from './components/ContextMenu/ContextMenu';
 
 function App() {
   const { db, ready } = useDatabase();
@@ -14,6 +16,7 @@ function App() {
   const [activeTabId, setActiveTabId] = useState<string>("");
   const currentViewType = useRef<TabViewType>("postit");
   const defaultTabCreated = useRef(false);
+  const mouse = useMousePosition();
 
   // Inicialização — roda uma vez quando o banco está pronto
   useEffect(() => {
@@ -74,24 +77,27 @@ function App() {
 
   const setTabId = useCallback((id: string) => {
     setActiveTabId(id);
-  }, [])
+  }, []);
 
   const createTab = useCallback(async () => {
     if (!ready) return;
-    await db!.createTab({color: "", id: crypto.randomUUID(), position: tabs.length++, title: "Página " + tabs.length++, viewType: currentViewType.current});
+    await db!.createTab({ color: "", id: crypto.randomUUID(), position: tabs.length++, title: "Página " + tabs.length++, viewType: currentViewType.current });
     db!.getTabsByView(currentViewType.current).then(setTabs);
-  }, [ready, currentViewType.current, tabs.length])
+  }, [ready, currentViewType.current, tabs.length]);
 
-  const onDelete = useCallback(async (i : string) => {
+  const onDelete = useCallback(async (i: string) => {
     if (!ready) return;
     await db!.deleteItem(i);
     db!.getItemsByTab(activeTabId).then(setItems);
-  }, [ready, activeTabId])
+  }, [ready, activeTabId]);
 
   if (!ready) return <p>Carregando...</p>;
 
   return (
     <main className="main-container">
+
+      <ContextMenu mouse={mouse} />
+      
       <div className='search-container'>
         <input type="text" placeholder='Pesquisar nota' />
       </div>
@@ -102,6 +108,7 @@ function App() {
             item={i}
             postit={{ onDelete: onDelete, onUpdate: saveItems }}
             key={i.id}
+            mouse={mouse}
           />
         ))}
       </div>

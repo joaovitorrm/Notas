@@ -2,20 +2,22 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./Postit.module.css";
 import TopBar from './TopBar';
 import { ItemData } from "../../types";
+import { MouseData } from "../../types/Mouse";
 
 type PostitProps = {
     item: ItemData;
     postit: PostitData;
+    mouse: MouseData
 }
 
 type Position = { x: number; y: number }
 
 export type PostitData = {
     onDelete: (id: string) => void;
-    onUpdate: (i: ItemData) => void;
+    onUpdate: (i: ItemData) => void;    
 }
 
-export default function Postit({ item, postit }: PostitProps) {
+export default function Postit({ item, postit, mouse }: PostitProps) {
 
     const [title, setTitle] = useState(item.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -29,6 +31,9 @@ export default function Postit({ item, postit }: PostitProps) {
     const [isPostitHover, setIsPostitHover] = useState<boolean>(false);
     const [isMinimized, setIsMinimized] = useState<boolean>(false);
     const zIndex = useRef<number>(1);
+
+    const [pos, setPos] = useState<Position>({ x: item.posX, y: item.posY })
+    const dragOffset = useRef<Position>({ x: 0, y: 0 })
 
     const getUpdate = (): ItemData => {
         return { ...item, posX: pos.x, posY: pos.y, title, description };
@@ -84,9 +89,6 @@ export default function Postit({ item, postit }: PostitProps) {
         setIsPostitHover(false);
     }, [])
 
-    const [pos, setPos] = useState<Position>({ x: item.posX, y: item.posY })
-    const dragOffset = useRef<Position>({ x: 0, y: 0 })
-
     const onMouseDown = (e: React.MouseEvent) => {
         // salva onde dentro do postit o clique aconteceu
         dragOffset.current = {
@@ -108,15 +110,15 @@ export default function Postit({ item, postit }: PostitProps) {
         }
 
         const onMouseUp = () => {
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
+            mouse.off('mousemove', onMouseMove);
+            mouse.off('mouseup', onMouseUp);
             zIndex.current = 1;
             postit.onUpdate({ ...item, posX: currentPos.x, posY: currentPos.y, title, description }) // ← usa currentPos
             setIsDragging(false);
         }
 
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
+        mouse.on("mousemove", onMouseMove);
+        mouse.on('mouseup', onMouseUp);
     }
 
     return (

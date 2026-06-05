@@ -1,0 +1,45 @@
+.context-main-container {
+    position: absolute;
+    width: 12rem;
+    height: 12rem;
+    background-color: transparent;
+    border-radius: 50%;
+    border: none;
+    transform: translate(-50%, -50%);
+    user-select: none;
+    pointer-events: none;
+    display: grid;
+    z-index: 1000;
+    grid-template: 
+    ". a . b ." 1fr
+    "c . . . d" 1fr
+    ". . . . ." 5%
+    "e . . . f" 1fr
+    ". g . h ." 1fr / 1fr 1fr 5% 1fr 1fr;
+
+    & span {
+        height: 100%;
+        width: 100%;
+        background-color: var(--secondary-color);
+        padding: .8rem;
+        border-radius: 50%;
+        border: none;
+        pointer-events: all;
+        user-select: none;
+        cursor: pointer;
+        & img {
+            height: 100%;
+            width: 100%;
+            filter: invert();
+        }
+    }
+
+    & .trash {
+        grid-area: b;
+    }
+
+    & .pallet {
+        grid-area: a;
+    }
+
+}
