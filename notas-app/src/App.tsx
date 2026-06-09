@@ -8,6 +8,7 @@ import { useMousePosition } from './hooks/useMouseMove';
 import ContextMenu, { ContextMenuData } from './components/ContextMenu/ContextMenu';
 import trashIcon from "./assets/trash-can.png";
 import palletIcon from "./assets/pallete.png";
+import { useColorPicker } from './hooks/useColorPicker';
 
 function App() {
   const { db, ready } = useDatabase();
@@ -18,8 +19,8 @@ function App() {
   const defaultTabCreated = useRef(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
   const mouse = useMousePosition();
-
-  console.log("A");
+  const { color, ColorPickerInput, openPicker, setColor } = useColorPicker();
+  const [synchedPostitColor, setSynchedPostitColor] = useState<string>("");
 
   useEffect(() => {
     if (!ready) return;
@@ -53,7 +54,7 @@ function App() {
     await db!.saveItem({
       id: crypto.randomUUID(),
       tabId: activeTabId,
-      color: "hsl(0, 50%, 50%)",
+      color: "hsl(0, 100%, 50%)",
       fontColor: "hsl(0, 0%, 0%)",
       description: "",
       sortOrder: 1,
@@ -109,6 +110,13 @@ function App() {
 
   const closeContextMenu = useCallback(() => setContextMenu(null), []);
 
+  useEffect(() => {
+    if (!synchedPostitColor) return;
+    const foundItem = items.find((i) => synchedPostitColor === i.id)!;
+    foundItem.color = color;
+    saveItems(foundItem);
+  }, [color, synchedPostitColor])
+
   if (!ready) return <p>Carregando...</p>;
 
   return (
@@ -137,12 +145,14 @@ function App() {
             onDelete={deleteItem}
             onUpdate={saveItems}
             onContextMenu={(x, y) => openContextMenu(x, y, [
-              { icon: palletIcon, gridPos: "a", onClick: () => { /* lógica de cor */ } },
+              { icon: palletIcon, gridPos: "a", onClick: () => { setColor(i.color); openPicker(mouse.x, mouse.y), setSynchedPostitColor(i.id) } },
               { icon: trashIcon, gridPos: "b", onClick: () => deleteItem(i.id) },
             ])}
           />
         ))}
       </div>
+
+      {ColorPickerInput}
 
       <Tabs
         activeId={activeTabId}

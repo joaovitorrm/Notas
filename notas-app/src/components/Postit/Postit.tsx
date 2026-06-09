@@ -130,7 +130,8 @@ export default function Postit(props: PostitProps) {
                 position: "absolute",
                 left: pos.x,
                 top: pos.y,
-                zIndex: zIndex.current
+                zIndex: zIndex.current,
+                backgroundColor: props.item.color
             }}
         >
             {(isPostitHover || isDragging) && <TopBar onMinimize={handleMinimize} onMouseDown={onMouseDown} onDelete={() => props.onDelete(props.item.id)} />}

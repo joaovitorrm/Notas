@@ -1,7 +1,6 @@
 .postit {
     width: 12rem;
     height: 12rem;
-    background-color: red;
     text-align: center;
     display: flex;
     flex-direction: column;
