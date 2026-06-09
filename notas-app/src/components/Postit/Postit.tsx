@@ -6,24 +6,22 @@ import { MouseData } from "../../types/Mouse";
 
 type PostitProps = {
     item: ItemData;
-    postit: PostitData;
+    onDelete: (id: string) => void;
+    onUpdate: (i: ItemData) => void;
+    onContextMenu: (x: number, y: number) => void;
     mouse: MouseData
 }
 
 type Position = { x: number; y: number }
 
-export type PostitData = {
-    onDelete: (id: string) => void;
-    onUpdate: (i: ItemData) => void;    
-}
 
-export default function Postit({ item, postit, mouse }: PostitProps) {
+export default function Postit(props: PostitProps) {
 
-    const [title, setTitle] = useState(item.title);
+    const [title, setTitle] = useState(props.item.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const inputTitleRef = useRef<HTMLTextAreaElement>(null);
 
-    const [description, setDescription] = useState(item.description)
+    const [description, setDescription] = useState(props.item.description)
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const inputDescriptionRef = useRef<HTMLTextAreaElement>(null);
 
@@ -32,18 +30,18 @@ export default function Postit({ item, postit, mouse }: PostitProps) {
     const [isMinimized, setIsMinimized] = useState<boolean>(false);
     const zIndex = useRef<number>(1);
 
-    const [pos, setPos] = useState<Position>({ x: item.posX, y: item.posY })
+    const [pos, setPos] = useState<Position>({ x: props.item.posX, y: props.item.posY })
     const dragOffset = useRef<Position>({ x: 0, y: 0 })
 
     const getUpdate = (): ItemData => {
-        return { ...item, posX: pos.x, posY: pos.y, title, description };
+        return { ...props.item, posX: pos.x, posY: pos.y, title, description };
     }
 
     useEffect(() => {
         if (isEditingTitle) {
             inputTitleRef.current?.select();
         } else {
-            postit.onUpdate(getUpdate());
+            props.onUpdate(getUpdate());
         }
     }, [isEditingTitle])
 
@@ -51,7 +49,7 @@ export default function Postit({ item, postit, mouse }: PostitProps) {
         if (isEditingDescription) {
             inputDescriptionRef.current?.select();
         } else {
-            postit.onUpdate(getUpdate());
+            props.onUpdate(getUpdate());
         }
     }, [isEditingDescription])
 
@@ -110,19 +108,24 @@ export default function Postit({ item, postit, mouse }: PostitProps) {
         }
 
         const onMouseUp = () => {
-            mouse.off('mousemove', onMouseMove);
-            mouse.off('mouseup', onMouseUp);
+            props.mouse.off('mousemove', onMouseMove);
+            props.mouse.off('mouseup', onMouseUp);
             zIndex.current = 1;
-            postit.onUpdate({ ...item, posX: currentPos.x, posY: currentPos.y, title, description }) // ← usa currentPos
+            props.onUpdate({ ...props.item, posX: currentPos.x, posY: currentPos.y, title, description }) // ← usa currentPos
             setIsDragging(false);
         }
 
-        mouse.on("mousemove", onMouseMove);
-        mouse.on('mouseup', onMouseUp);
+        props.mouse.on("mousemove", onMouseMove);
+        props.mouse.on('mouseup', onMouseUp);
     }
 
     return (
-        <div key={item.id} className={`${styles["postit"]} ${isMinimized && styles["minimized"]}`} onMouseEnter={() => handleHoverEnter()} onMouseLeave={() => handleHoverLeave()}
+        <div 
+            key={props.item.id} 
+            className={`${styles["postit"]} ${isMinimized && styles["minimized"]}`} 
+            onMouseEnter={() => handleHoverEnter()} 
+            onMouseLeave={() => handleHoverLeave()}
+            onContextMenu={(e) => {e.preventDefault(); props.onContextMenu(e.clientX, e.clientY)}}
             style={{
                 position: "absolute",
                 left: pos.x,
@@ -130,7 +133,7 @@ export default function Postit({ item, postit, mouse }: PostitProps) {
                 zIndex: zIndex.current
             }}
         >
-            {(isPostitHover || isDragging) && <TopBar onMinimize={handleMinimize} onMouseDown={onMouseDown} onDelete={() => postit.onDelete(item.id)} />}
+            {(isPostitHover || isDragging) && <TopBar onMinimize={handleMinimize} onMouseDown={onMouseDown} onDelete={() => props.onDelete(props.item.id)} />}
 
             {isEditingTitle ?
                 <textarea

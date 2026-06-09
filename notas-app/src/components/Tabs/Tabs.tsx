@@ -9,12 +9,13 @@ type TabsProps = {
     saveTab: (t: TabData) => void;
     createTab: Function;
     setActiveTab: Function;
+    onContextMenu: (x: number, y: number, id: string) => void;
 }
 
-export default function Tabs({tabs, activeId, saveTab, createTab, setActiveTab} : TabsProps) {
+export default function Tabs({tabs, activeId, saveTab, createTab, setActiveTab, onContextMenu} : TabsProps) {
     return (
         <div className={styles["tabs"]}>
-            {tabs.map((t) => (<Tab active={activeId === t.id} tab={t} key={t.id} saveTab={saveTab} setActiveTab={setActiveTab}/>))}
+            {tabs.map((t) => (<Tab active={activeId === t.id} tab={t} key={t.id} saveTab={saveTab} setActiveTab={setActiveTab} onContextMenu={onContextMenu}/>))}
             <div className={styles["add-page"]} onClick={() => createTab()}>+</div>
         </div>
     )

@@ -1,5 +1,3 @@
-//import { invoke } from "@tauri-apps/api/core";
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ToolBar from "./components/ToolBar/ToolBar";
 import { useDatabase } from './context/DatabaseContext';
@@ -7,7 +5,9 @@ import { ItemData, TabData, TabViewType } from './types';
 import Tabs from './components/Tabs/Tabs';
 import Postit from './components/Postit/Postit';
 import { useMousePosition } from './hooks/useMouseMove';
-import ContextMenu from './components/ContextMenu/ContextMenu';
+import ContextMenu, { ContextMenuData } from './components/ContextMenu/ContextMenu';
+import trashIcon from "./assets/trash-can.png";
+import palletIcon from "./assets/pallete.png";
 
 function App() {
   const { db, ready } = useDatabase();
@@ -16,12 +16,13 @@ function App() {
   const [activeTabId, setActiveTabId] = useState<string>("");
   const currentViewType = useRef<TabViewType>("postit");
   const defaultTabCreated = useRef(false);
+  const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
   const mouse = useMousePosition();
 
-  // Inicialização — roda uma vez quando o banco está pronto
+  console.log("A");
+
   useEffect(() => {
     if (!ready) return;
-
     db!.getTabsByView(currentViewType.current).then(async fetchedTabs => {
       if (fetchedTabs.length === 0 && !defaultTabCreated.current) {
         defaultTabCreated.current = true;
@@ -34,15 +35,14 @@ function App() {
         });
         const newTabs = await db!.getTabsByView(currentViewType.current);
         setTabs(newTabs);
-        setActiveTabId(newTabs[0].id); // ← define aqui direto
+        setActiveTabId(newTabs[0].id);
       } else {
         setTabs(fetchedTabs);
-        setActiveTabId(fetchedTabs[0].id); // ← define aqui direto
+        setActiveTabId(fetchedTabs[0].id);
       }
     });
   }, [ready]);
 
-  // Carrega items quando a tab ativa muda
   useEffect(() => {
     if (activeTabId === "") return;
     db!.getItemsByTab(activeTabId).then(setItems);
@@ -71,7 +71,6 @@ function App() {
 
   const saveTab = useCallback(async (t: TabData) => {
     if (!ready) return;
-    console.log("save");
     await db!.saveTab(t);
   }, [ready]);
 
@@ -85,19 +84,46 @@ function App() {
     db!.getTabsByView(currentViewType.current).then(setTabs);
   }, [ready, currentViewType.current, tabs.length]);
 
-  const onDelete = useCallback(async (i: string) => {
+  const removeTab = useCallback(async (id: string) => {
     if (!ready) return;
-    await db!.deleteItem(i);
+
+    let isActualTab = activeTabId === id;
+
+    await db!.deleteTab(id);
+    const newTabs = await db!.getTabsByView(currentViewType.current);
+
+    setTabs(newTabs);
+
+    if (isActualTab) setActiveTabId(newTabs[0].id);
+  }, [ready, activeTabId])
+
+  const deleteItem = useCallback(async (id: string) => {
+    if (!ready) return;
+    await db!.deleteItem(id);
     db!.getItemsByTab(activeTabId).then(setItems);
   }, [ready, activeTabId]);
+
+  const openContextMenu = useCallback((x: number, y: number, actions: ContextMenuData['actions']) => {
+    setContextMenu({ x, y, mouse, actions });
+  }, []);
+
+  const closeContextMenu = useCallback(() => setContextMenu(null), []);
 
   if (!ready) return <p>Carregando...</p>;
 
   return (
     <main className="main-container">
 
-      <ContextMenu mouse={mouse} />
-      
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          mouse={mouse}
+          actions={contextMenu.actions}
+          onClose={closeContextMenu}
+        />
+      )}
+
       <div className='search-container'>
         <input type="text" placeholder='Pesquisar nota' />
       </div>
@@ -106,14 +132,28 @@ function App() {
         {items.map(i => (
           <Postit
             item={i}
-            postit={{ onDelete: onDelete, onUpdate: saveItems }}
             key={i.id}
             mouse={mouse}
+            onDelete={deleteItem}
+            onUpdate={saveItems}
+            onContextMenu={(x, y) => openContextMenu(x, y, [
+              { icon: palletIcon, gridPos: "a", onClick: () => { /* lógica de cor */ } },
+              { icon: trashIcon, gridPos: "b", onClick: () => deleteItem(i.id) },
+            ])}
           />
         ))}
       </div>
 
-      <Tabs activeId={activeTabId} tabs={tabs} saveTab={saveTab} createTab={createTab} setActiveTab={setTabId} /* onTabChange={setActiveTabId} */ />
+      <Tabs
+        activeId={activeTabId}
+        tabs={tabs}
+        saveTab={saveTab}
+        createTab={createTab}
+        setActiveTab={setTabId}
+        onContextMenu={(x, y, id) => openContextMenu(x, y, [
+          { icon: trashIcon, gridPos: "b", onClick: () => removeTab(id) },
+        ])}
+      />
 
       <ToolBar onAdd={addNote} />
     </main>

@@ -8,9 +8,10 @@ type TabProps = {
     active: boolean;
     saveTab: (t: TabData) => void;
     setActiveTab: Function;
+    onContextMenu: (x: number, y: number, id: string) => void;
 }
 
-export default function Tab({ tab, active, saveTab, setActiveTab }: TabProps) {
+export default function Tab({ tab, active, saveTab, setActiveTab, onContextMenu }: TabProps) {
 
     const [title, setTitle] = useState<string>(tab.title);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +35,7 @@ export default function Tab({ tab, active, saveTab, setActiveTab }: TabProps) {
             onDoubleClick={() => setIsEditing(true)} 
             onBlur={() => setIsEditing(false)}
             onClick={() => setActiveTab(tab.id)}
+            onContextMenu={(e) => {e.preventDefault(); onContextMenu(e.clientX, e.clientY, tab.id)}}
         >
             <span>{isEditing ? <input type="text" ref={inputRef} value={title} onChange={((e) => setTitle(e.target.value))}></input> : <>{title}</>}</span>
         </div>

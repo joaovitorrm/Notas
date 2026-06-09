@@ -1,35 +1,49 @@
-import { useEffect, useState } from "react";
-import { MouseData } from "../../types/Mouse";
+import { useEffect, useRef } from "react";
 import styles from "./ContextMenu.module.css";
+import { MouseData } from "../../types/Mouse";
 
-import trashIcon from "../../assets/trash.png";
-import palletIcon from "../../assets/pallete.png";
-
-type ContextMenuData = {
-    mouse: MouseData
+export type ContextMenuAction = {
+    icon: string;
+    gridPos: string;
+    onClick: () => void;
 }
 
-export default function ContextMenu({ mouse }: ContextMenuData) {
+export type ContextMenuData = {
+    x: number;
+    y: number;
+    mouse: MouseData;
+    actions: ContextMenuAction[];
+}
 
-    const [pos, setPos] = useState({ x: 0, y: 0 });
+export default function ContextMenu({ x, y, mouse, actions, onClose }: ContextMenuData & { onClose: () => void }) {
+
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const handleMouseDown = (e : MouseEvent) => {
-            setPos({ x: e.clientX, y: e.clientY })
-        }
-        mouse.on("mousedown", handleMouseDown);
-        return () => {
-            mouse.off("mousedown", handleMouseDown)
-        }
-    }, [])
+        if (!containerRef.current || !mouse) return;
+        const rect = containerRef.current.getBoundingClientRect();
+
+        const isOutside =
+            mouse.x < rect.left ||
+            mouse.x > rect.right ||
+            mouse.y < rect.top ||
+            mouse.y > rect.bottom;
+
+        if (isOutside) onClose();
+    }, [mouse.x, mouse.y]);
 
     return (
         <div
             className={styles["context-main-container"]}
-            style={{ left: pos.x, top: pos.y }}
+            style={{ left: `max(6rem, ${x}px)`, top: y }}
+            ref={containerRef}
         >
-            <span className={styles["trash"]}><img src={trashIcon}/></span>
-            <span className={styles["pallet"]}><img src={palletIcon}/></span>
+            <div className={styles["hitbox"]} onMouseLeave={onClose} />
+            {actions.map((action, i) => (
+                <span key={i} style={{ gridArea: action.gridPos }} onClick={() => { action.onClick(); onClose(); }}>
+                    <img src={action.icon} />
+                </span>
+            ))}
         </div>
     )
 }
