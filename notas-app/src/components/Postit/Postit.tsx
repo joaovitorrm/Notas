@@ -120,12 +120,12 @@ export default function Postit(props: PostitProps) {
     }
 
     return (
-        <div 
-            key={props.item.id} 
-            className={`${styles["postit"]} ${isMinimized && styles["minimized"]}`} 
-            onMouseEnter={() => handleHoverEnter()} 
+        <div
+            key={props.item.id}
+            className={`${styles["postit"]} ${isMinimized && styles["minimized"]}`}
+            onMouseEnter={() => handleHoverEnter()}
             onMouseLeave={() => handleHoverLeave()}
-            onContextMenu={(e) => {e.preventDefault(); props.onContextMenu(e.clientX, e.clientY)}}
+            onContextMenu={(e) => { e.preventDefault(); props.onContextMenu(e.clientX, e.clientY) }}
             style={{
                 position: "absolute",
                 left: pos.x,
@@ -143,11 +143,14 @@ export default function Postit(props: PostitProps) {
                     onKeyDown={(e) => handleClose(e, "title")}
                     onChange={(e) => setTitle(e.target.value)}
                     ref={inputTitleRef}
-                    onBlur={() => setIsEditingTitle(false)}>
+                    onBlur={() => setIsEditingTitle(false)}
+                    tabIndex={0}>
                 </textarea> :
                 <h2
                     className={styles["title"]}
-                    onDoubleClick={() => setIsEditingTitle(true)}>{title}
+                    onDoubleClick={() => setIsEditingTitle(true)}
+                    onKeyDown={(e) => {if (e.key === "Enter") {e.preventDefault(); setIsEditingTitle(true)}}}
+                    tabIndex={0}>{title}
                 </h2>
             }
 
@@ -159,11 +162,14 @@ export default function Postit(props: PostitProps) {
                         onKeyDown={(e) => handleClose(e, "description")}
                         onChange={e => setDescription(e.target.value)}
                         ref={inputDescriptionRef}
-                        onBlur={() => setIsEditingDescription(false)}>
+                        onBlur={() => setIsEditingDescription(false)}
+                        tabIndex={0}>
                     </textarea> :
                     <p
                         onDoubleClick={() => setIsEditingDescription(true)}
-                        className={styles["description"]}>{description}
+                        className={styles["description"]}
+                        onKeyDown={(e) => {if (e.key === "Enter") {e.preventDefault(); setIsEditingDescription(true)}}}
+                        tabIndex={0}>{description}
                     </p>
                 )}
 
