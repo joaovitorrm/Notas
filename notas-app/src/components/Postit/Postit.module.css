@@ -20,6 +20,7 @@
         flex: 1;
         padding: .3rem;
         text-align: start;
+        white-space: pre-wrap;
     }
 
     & textarea {
@@ -31,7 +32,7 @@
         word-wrap: break-word;
 
         &:hover {
-            outline: 1px solid black;
+            outline: 2px solid rgb(195, 195, 195);
             outline-offset: -2px;
         }
     }

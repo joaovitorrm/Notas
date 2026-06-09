@@ -25,6 +25,8 @@ export default function Postit(props: PostitProps) {
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const inputDescriptionRef = useRef<HTMLTextAreaElement>(null);
 
+    const [isShiftPressed, setIsShiftPressed] = useState<boolean>(false);
+
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [isPostitHover, setIsPostitHover] = useState<boolean>(false);
     const [isMinimized, setIsMinimized] = useState<boolean>(false);
@@ -36,6 +38,25 @@ export default function Postit(props: PostitProps) {
     const getUpdate = (): ItemData => {
         return { ...props.item, posX: pos.x, posY: pos.y, title, description };
     }
+
+    useEffect(() => {
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Shift") setIsShiftPressed(true);
+        }
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.key === "Shift") setIsShiftPressed(false);
+        }
+
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+        }
+    }, [])
 
     useEffect(() => {
         if (isEditingTitle) {
@@ -68,10 +89,10 @@ export default function Postit(props: PostitProps) {
                 e.preventDefault();
                 setIsEditingDescription(true);
             };
-        } else {
+        } else if (!isShiftPressed) {
             if (e.key === "Enter" || e.key === "Escape") setIsEditingDescription(false);
         }
-    }, []);
+    }, [isShiftPressed]);
 
     const handleMinimize = useCallback(() => {
         setIsMinimized((prev) => !prev);
@@ -149,7 +170,7 @@ export default function Postit(props: PostitProps) {
                 <h2
                     className={styles["title"]}
                     onDoubleClick={() => setIsEditingTitle(true)}
-                    onKeyDown={(e) => {if (e.key === "Enter") {e.preventDefault(); setIsEditingTitle(true)}}}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setIsEditingTitle(true) } }}
                     tabIndex={0}>{title}
                 </h2>
             }
@@ -168,7 +189,7 @@ export default function Postit(props: PostitProps) {
                     <p
                         onDoubleClick={() => setIsEditingDescription(true)}
                         className={styles["description"]}
-                        onKeyDown={(e) => {if (e.key === "Enter") {e.preventDefault(); setIsEditingDescription(true)}}}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setIsEditingDescription(true) } }}
                         tabIndex={0}>{description}
                     </p>
                 )}
