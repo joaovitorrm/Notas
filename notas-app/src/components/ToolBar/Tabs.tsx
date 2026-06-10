@@ -9,7 +9,7 @@ type TabsProps = {
     saveTab: (t: TabData) => void;
     createTab: Function;
     setActiveTab: Function;
-    onContextMenu: (x: number, y: number, id: string) => void;
+    onContextMenu: (e: React.MouseEvent, x: number, y: number, id: string) => void;
 }
 
 export default function Tabs({tabs, activeId, saveTab, createTab, setActiveTab, onContextMenu} : TabsProps) {

@@ -4,6 +4,7 @@ import { MouseData } from "../../types/Mouse";
 
 export type ContextMenuAction = {
     icon: string;
+    label?: string;
     gridPos: string;
     onClick: () => void;
 }
@@ -41,7 +42,7 @@ export default function ContextMenu({ x, y, mouse, actions, onClose }: ContextMe
             <div className={styles["hitbox"]} onMouseLeave={onClose} />
             {actions.map((action, i) => (
                 <span key={i} style={{ gridArea: action.gridPos }} onClick={() => { action.onClick(); onClose(); }}>
-                    <img src={action.icon} />
+                    {action.icon === "" ? <p>{action.label!}</p> : <img src={action.icon} />}
                 </span>
             ))}
         </div>

@@ -24,6 +24,8 @@ html, body {
   width: 100%;
   height: 100dvh;
   transition: all .4s;
+  display: flex;
+  flex-direction: column;
 
   & .search-container {
     margin: auto;
@@ -46,6 +48,6 @@ html, body {
     grid-template-columns: repeat(auto-fill, 12rem);
     justify-content: center;
     overflow-y: auto;
-    max-height: 95dvh;
+    flex: 1;
   }
 }

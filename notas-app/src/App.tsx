@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import ToolBar from "./components/ToolBar/ToolBar";
 import { useDatabase } from './context/DatabaseContext';
 import { ItemData, TabData, TabViewType } from './types';
-import Tabs from './components/Tabs/Tabs';
+import Tabs from './components/ToolBar/Tabs';
 import Postit from './components/Postit/Postit';
 import { useMousePosition } from './hooks/useMouseMove';
 import ContextMenu, { ContextMenuData } from './components/ContextMenu/ContextMenu';
@@ -49,18 +49,21 @@ function App() {
     db!.getItemsByTab(activeTabId).then(setItems);
   }, [activeTabId]);
 
-  const addNote = useCallback(async () => {
+  const addNote = useCallback(async (posX: number = 20, posY: number = 20) => {
     if (activeTabId === "") return;
     await db!.saveItem({
       id: crypto.randomUUID(),
       tabId: activeTabId,
-      color: "hsl(0, 100%, 50%)",
-      fontColor: "hsl(0, 0%, 0%)",
+      backgroundColor: "hsl(0, 100%, 50%)",
+      titleColor: "hsl(0, 0%, 100%)",
+      descriptionColor: "hsl(0, 0%, 100%)",
+      descriptionFont: "sans-serif",
+      titleFont: "sans-serif",
       description: "",
       sortOrder: 1,
       title: "",
-      posX: 20,
-      posY: 20
+      posX,
+      posY
     });
     db!.getItemsByTab(activeTabId).then(setItems);
   }, [activeTabId]);
@@ -104,7 +107,9 @@ function App() {
     db!.getItemsByTab(activeTabId).then(setItems);
   }, [ready, activeTabId]);
 
-  const openContextMenu = useCallback((x: number, y: number, actions: ContextMenuData['actions']) => {
+  const openContextMenu = useCallback((e: React.MouseEvent, x: number, y: number, actions: ContextMenuData['actions']) => {
+    e.preventDefault();
+    e.stopPropagation();
     setContextMenu({ x, y, mouse, actions });
   }, []);
 
@@ -113,7 +118,7 @@ function App() {
   useEffect(() => {
     if (!synchedPostitColor) return;
     const foundItem = items.find((i) => synchedPostitColor === i.id)!;
-    foundItem.color = color;
+    foundItem.backgroundColor = color;
     saveItems(foundItem);
   }, [color, synchedPostitColor])
 
@@ -136,7 +141,11 @@ function App() {
         <input type="text" placeholder='Pesquisar nota' />
       </div>
 
-      <div className='main-view'>
+      <div className='main-view' onContextMenu={(e) => {
+        openContextMenu(e, mouse.x, mouse.y, [{
+          icon: "", label: "➕", gridPos: "a", onClick: () => addNote(mouse.x, mouse.y)
+        }])
+      }}>
         {items.map(i => (
           <Postit
             item={i}
@@ -144,8 +153,8 @@ function App() {
             mouse={mouse}
             onDelete={deleteItem}
             onUpdate={saveItems}
-            onContextMenu={(x, y) => openContextMenu(x, y, [
-              { icon: palletIcon, gridPos: "a", onClick: () => { setColor(i.color); openPicker(mouse.x, mouse.y), setSynchedPostitColor(i.id) } },
+            onContextMenu={(e, x, y) => openContextMenu(e, x, y, [
+              { icon: palletIcon, gridPos: "a", onClick: () => { setColor(i.backgroundColor); openPicker(mouse.x, mouse.y), setSynchedPostitColor(i.id) } },
               { icon: trashIcon, gridPos: "b", onClick: () => deleteItem(i.id) },
             ])}
           />
@@ -160,7 +169,7 @@ function App() {
         saveTab={saveTab}
         createTab={createTab}
         setActiveTab={setTabId}
-        onContextMenu={(x, y, id) => openContextMenu(x, y, [
+        onContextMenu={(e, x, y, id) => openContextMenu(e, x, y, [
           { icon: trashIcon, gridPos: "b", onClick: () => removeTab(id) },
         ])}
       />

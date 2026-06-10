@@ -29,9 +29,12 @@ export class DatabaseConnection {
       id TEXT PRIMARY KEY,
       tab_id TEXT NOT NULL,
       title TEXT,
+      title_font TEXT DEFAULT 'arial',
+      title_color TEXT DEFAULT 'hsl(0, 0%, 100%)',
       description TEXT,
-      color TEXT DEFAULT '#ffeb3b',
-      fontColor TEXT DEFAULT 'hsl(0, 0%, 6%)',
+      description_font TEXT DEFAULT 'arial',
+      description_color TEXT DEFAULT 'hsl(0, 0%, 100%)',
+      background_color TEXT DEFAULT 'hsl(0, 100%, 50%)',
       pos_x INTEGER DEFAULT 0,
       pos_y INTEGER DEFAULT 0,
       sort_order INTEGER DEFAULT 0,
@@ -75,9 +78,12 @@ export class DatabaseConnection {
             id: row.id,
             tabId: row.tab_id,
             title: row.title,
+            titleFont: row.title_font,
+            titleColor: row.title_color,
             description: row.description,
-            color: row.color,
-            fontColor: row.fontColor,
+            descriptionFont: row.description_font,
+            descriptionColor: row.description_color,
+            backgroundColor: row.background_color,
             posX: row.pos_x,
             posY: row.pos_y,
             sortOrder: row.sort_order,
@@ -88,9 +94,22 @@ export class DatabaseConnection {
 
     public async saveItem(item: ItemData): Promise<void> {
         await this.db.execute(
-            `INSERT OR REPLACE INTO items (id, tab_id, title, description, color, fontColor, pos_x, pos_y, sort_order)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [item.id, item.tabId, item.title, item.description, item.color, item.fontColor, item.posX, item.posY, item.sortOrder]
+            `INSERT OR REPLACE INTO items (id, tab_id, title, title_font, title_color, description, description_font, description_color, background_color, pos_x, pos_y, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+            [
+                item.id,
+                item.tabId,
+                item.title,
+                item.titleFont, 
+                item.titleColor, 
+                item.description, 
+                item.descriptionFont,
+                item.descriptionColor,
+                item.backgroundColor,
+                item.posX, 
+                item.posY, 
+                item.sortOrder
+            ]
         )
     }
 
@@ -98,7 +117,7 @@ export class DatabaseConnection {
         await this.db.execute(
             `UPDATE tabs SET color = $1, title = $2, position = $3 WHERE id = $4`, [tab.color, tab.title, tab.position, tab.id]
         )
-    } 
+    }
 
     public async deleteItem(id: string): Promise<void> {
         await this.db.execute("DELETE FROM items WHERE id = $1", [id])

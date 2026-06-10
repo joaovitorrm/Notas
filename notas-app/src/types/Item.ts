@@ -3,9 +3,12 @@ export type ItemData = {
   id: string
   tabId: string
   title: string
+  titleFont: string
+  titleColor: string
   description: string
-  color: string
-  fontColor: string
+  descriptionFont: string
+  descriptionColor: string
+  backgroundColor: string
   posX: number
   posY: number
   sortOrder: number

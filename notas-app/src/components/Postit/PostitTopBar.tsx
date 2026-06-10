@@ -1,4 +1,4 @@
-import styles from "./TopBar.module.css";
+import styles from "./PostitTopBar.module.css";
 
 type TopBarProps = {
     onMouseDown: Function;

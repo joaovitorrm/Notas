@@ -1,8 +1,5 @@
 .toolbar {
     display: flex;
-    position: absolute;
-    bottom: 0;
-    left: 0;
     width: 100%;
     gap: .5rem;
     height: 3rem;

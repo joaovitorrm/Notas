@@ -1,8 +1,6 @@
 .tabs {
     display: flex;
-    position: absolute;
     align-items: center;
-    bottom: 3rem;
     gap: .5rem;
     padding-inline: .5rem;
     height: 2rem;
