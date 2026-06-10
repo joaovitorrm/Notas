@@ -19,6 +19,7 @@ function App() {
   const defaultTabCreated = useRef(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
   const mouse = useMousePosition();
+
   const { color, ColorPickerInput, openPicker, setColor } = useColorPicker();
   const [synchedPostitColor, setSynchedPostitColor] = useState<string>("");
 
@@ -84,7 +85,8 @@ function App() {
 
   const createTab = useCallback(async () => {
     if (!ready) return;
-    await db!.createTab({ color: "", id: crypto.randomUUID(), position: tabs.length++, title: "Página " + tabs.length++, viewType: currentViewType.current });
+    const pos = tabs.length + 1;
+    await db!.createTab({ color: "", id: crypto.randomUUID(), position: pos, title: "Página " + pos, viewType: currentViewType.current });
     db!.getTabsByView(currentViewType.current).then(setTabs);
   }, [ready, currentViewType.current, tabs.length]);
 
@@ -96,8 +98,14 @@ function App() {
     await db!.deleteTab(id);
     const newTabs = await db!.getTabsByView(currentViewType.current);
 
-    setTabs(newTabs);
+    if (newTabs.length === 0) {
+      setTabs([]);
+      setActiveTabId("");
+      setItems([]);
+      return;
+    }
 
+    setTabs(newTabs);
     if (isActualTab) setActiveTabId(newTabs[0].id);
   }, [ready, activeTabId])
 
@@ -111,16 +119,25 @@ function App() {
     e.preventDefault();
     e.stopPropagation();
     setContextMenu({ x, y, mouse, actions });
-  }, []);
+  }, [mouse]);
 
   const closeContextMenu = useCallback(() => setContextMenu(null), []);
 
   useEffect(() => {
     if (!synchedPostitColor) return;
-    const foundItem = items.find((i) => synchedPostitColor === i.id)!;
-    foundItem.backgroundColor = color;
-    saveItems(foundItem);
+    const foundItem = items.find((i) => synchedPostitColor === i.id);
+    if (!foundItem) return;
+    const updated = { ...foundItem, backgroundColor: color };
+    setItems(prev => prev.map(i => i.id === updated.id ? updated : i));
+    saveItems(updated);
   }, [color, synchedPostitColor])
+
+  const handlePostitContextMenu = useCallback((e: React.MouseEvent, x: number, y: number, item: ItemData) => {
+    openContextMenu(e, x, y, [
+      { icon: palletIcon, gridPos: "a", onClick: () => { setColor(item.backgroundColor); openPicker(x, y); setSynchedPostitColor(item.id) } },
+      { icon: trashIcon, gridPos: "b", onClick: () => deleteItem(item.id) },
+    ]);
+  }, [openPicker, deleteItem, setColor]);
 
   if (!ready) return <p>Carregando...</p>;
 
@@ -142,8 +159,9 @@ function App() {
       </div>
 
       <div className='main-view' onContextMenu={(e) => {
-        openContextMenu(e, mouse.x, mouse.y, [{
-          icon: "", label: "➕", gridPos: "a", onClick: () => addNote(mouse.x, mouse.y)
+        const { x, y } = mouse.getPosition()
+        openContextMenu(e, x, y, [{
+          icon: "", label: "➕", gridPos: "a", onClick: () => addNote(x, y)
         }])
       }}>
         {items.map(i => (
@@ -153,10 +171,7 @@ function App() {
             mouse={mouse}
             onDelete={deleteItem}
             onUpdate={saveItems}
-            onContextMenu={(e, x, y) => openContextMenu(e, x, y, [
-              { icon: palletIcon, gridPos: "a", onClick: () => { setColor(i.backgroundColor); openPicker(mouse.x, mouse.y), setSynchedPostitColor(i.id) } },
-              { icon: trashIcon, gridPos: "b", onClick: () => deleteItem(i.id) },
-            ])}
+            onContextMenu={(e, x, y) => handlePostitContextMenu(e, x, y, i)}
           />
         ))}
       </div>

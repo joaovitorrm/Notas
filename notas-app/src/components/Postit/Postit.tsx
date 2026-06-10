@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./Postit.module.css";
 import TopBar from './PostitTopBar';
 import { ItemData } from "../../types";
@@ -14,8 +14,7 @@ type PostitProps = {
 
 type Position = { x: number; y: number }
 
-
-export default function Postit(props: PostitProps) {
+function Postit(props: PostitProps) {
 
     const [title, setTitle] = useState(props.item.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -34,10 +33,6 @@ export default function Postit(props: PostitProps) {
 
     const [pos, setPos] = useState<Position>({ x: props.item.posX, y: props.item.posY })
     const dragOffset = useRef<Position>({ x: 0, y: 0 })
-
-    const getUpdate = (): ItemData => {
-        return { ...props.item, posX: pos.x, posY: pos.y, title, description };
-    }
 
     useEffect(() => {
 
@@ -62,7 +57,7 @@ export default function Postit(props: PostitProps) {
         if (isEditingTitle) {
             inputTitleRef.current?.select();
         } else {
-            props.onUpdate(getUpdate());
+            props.onUpdate({...props.item, title});
         }
     }, [isEditingTitle])
 
@@ -70,7 +65,7 @@ export default function Postit(props: PostitProps) {
         if (isEditingDescription) {
             inputDescriptionRef.current?.select();
         } else {
-            props.onUpdate(getUpdate());
+            props.onUpdate({...props.item, description});
         }
     }, [isEditingDescription])
 
@@ -109,7 +104,7 @@ export default function Postit(props: PostitProps) {
     }, [])
 
     const onMouseDown = (e: React.MouseEvent) => {
-        // salva onde dentro do postit o clique aconteceu
+        // salva dentro do postit onde o clique aconteceu
         dragOffset.current = {
             x: e.clientX - pos.x,
             y: e.clientY - pos.y,
@@ -207,3 +202,5 @@ export default function Postit(props: PostitProps) {
         </div>
     )
 }
+
+export default React.memo(Postit);

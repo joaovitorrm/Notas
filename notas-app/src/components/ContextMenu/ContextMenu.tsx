@@ -24,14 +24,22 @@ export default function ContextMenu({ x, y, mouse, actions, onClose }: ContextMe
         if (!containerRef.current || !mouse) return;
         const rect = containerRef.current.getBoundingClientRect();
 
-        const isOutside =
-            mouse.x < rect.left ||
-            mouse.x > rect.right ||
-            mouse.y < rect.top ||
-            mouse.y > rect.bottom;
+        const handleMouseOut = (e: MouseEvent) => {
+            const isOutside =
+                e.clientX < rect.left ||
+                e.clientX > rect.right ||
+                e.clientY < rect.top ||
+                e.clientY > rect.bottom;
 
-        if (isOutside) onClose();
-    }, [mouse.x, mouse.y]);
+            if (isOutside) onClose();
+        }
+
+        mouse.on("mousemove", handleMouseOut);
+        return () => {
+            mouse.off("mousemove", handleMouseOut)
+        }
+
+    }, [x, y]);
 
     return (
         <div

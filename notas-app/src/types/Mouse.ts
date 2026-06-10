@@ -1,9 +1,15 @@
 export type MouseData = {
-    x: number,
-    y: number,
-    isDown: boolean,
-    on: (type: MouseHandlerType, f: MouseCallback) => void,
-    off: (type: MouseHandlerType, f: MouseCallback) => void;
+    getPosition: () => { x: number; y: number };
+    getIsDown: () => boolean;
+    on: (t: MouseHandlerType, f: MouseCallback) => void;
+    off: (t: MouseHandlerType, f: MouseCallback) => void;
+};
+
+export type MousePosition = {x: number, y: number}
+
+export type MouseHandler = {
+    callback: MouseCallback;
+    type: MouseHandlerType
 }
 
 export type MouseHandlerType = "mousedown" | "mouseup" | "mousemove" | "contextmenu";
