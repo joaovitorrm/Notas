@@ -9,6 +9,7 @@ export type ItemData = {
   descriptionFont: string
   descriptionColor: string
   backgroundColor: string
+  isMinimized: boolean
   posX: number
   posY: number
   sortOrder: number

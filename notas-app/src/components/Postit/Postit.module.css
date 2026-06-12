@@ -8,8 +8,8 @@
     outline: 1px solid var(--bg-color);
 
     & .title {
-        flex-basis: 25%;
         font-size: 1.4rem;
+        height: 3rem;
         text-align: center;
         display: flex;
         align-items: center;
@@ -21,6 +21,7 @@
         padding: .3rem;
         text-align: start;
         white-space: pre-wrap;
+        overflow: hidden;
     }
 
     & textarea {
@@ -46,11 +47,7 @@
     }
 
     &.minimized {
-        height: 3rem;
-
-        & .title {
-            flex: 1;
-        }
+        height: 6rem;
     }
 }
 

@@ -28,7 +28,7 @@ function Postit(props: PostitProps) {
 
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [isPostitHover, setIsPostitHover] = useState<boolean>(false);
-    const [isMinimized, setIsMinimized] = useState<boolean>(false);
+    const [isMinimized, setIsMinimized] = useState<boolean>(props.item.isMinimized);
     const zIndex = useRef<number>(1);
 
     const [pos, setPos] = useState<Position>({ x: props.item.posX, y: props.item.posY })
@@ -54,26 +54,22 @@ function Postit(props: PostitProps) {
     }, [])
 
     useEffect(() => {
-        if (isEditingTitle) {
-            inputTitleRef.current?.select();
-        } else {
-            props.onUpdate({...props.item, title});
-        }
+        if (isEditingTitle) inputTitleRef.current?.select();
     }, [isEditingTitle])
 
     useEffect(() => {
-        if (isEditingDescription) {
-            inputDescriptionRef.current?.select();
-        } else {
-            props.onUpdate({...props.item, description});
-        }
+        if (isEditingDescription) inputDescriptionRef.current?.select();
     }, [isEditingDescription])
+
+    useEffect(() => {
+        props.onUpdate({ ...props.item, title, description, posX: pos.x, posY: pos.y, isMinimized })
+    }, [title, description, pos.x, pos.y, isMinimized])
 
     const copy = useCallback(async (text: string) => {
         document.body.classList.add(styles["cursor-copy"]);
         document.addEventListener("mouseup", () => {
             document.body.classList.remove(styles["cursor-copy"]);
-        }, {once: true});
+        }, { once: true });
         await navigator.clipboard.writeText(text);
     }, []);
 
@@ -127,7 +123,6 @@ function Postit(props: PostitProps) {
             props.mouse.off('mousemove', onMouseMove);
             props.mouse.off('mouseup', onMouseUp);
             zIndex.current = 1;
-            props.onUpdate({ ...props.item, posX: currentPos.x, posY: currentPos.y, title, description }) // ← usa currentPos
             setIsDragging(false);
         }
 
@@ -141,7 +136,7 @@ function Postit(props: PostitProps) {
             className={`${styles["postit"]} ${isMinimized && styles["minimized"]}`}
             onMouseEnter={() => handleHoverEnter()}
             onMouseLeave={() => handleHoverLeave()}
-            onContextMenu={(e) => {props.onContextMenu(e, e.clientX, e.clientY) }}
+            onContextMenu={(e) => { props.onContextMenu(e, e.clientX, e.clientY) }}
             style={{
                 position: "absolute",
                 left: pos.x,
@@ -155,7 +150,7 @@ function Postit(props: PostitProps) {
             {isEditingTitle ?
                 <textarea
                     className={styles["title"]}
-                    style={{fontFamily: props.item.titleFont, color: props.item.titleColor}}
+                    style={{ fontFamily: props.item.titleFont, color: props.item.titleColor }}
                     value={title}
                     onKeyDown={(e) => handleClose(e, "title")}
                     onChange={(e) => setTitle(e.target.value)}
@@ -165,37 +160,36 @@ function Postit(props: PostitProps) {
                 </textarea> :
                 <h2
                     className={styles["title"]}
-                    style={{fontFamily: props.item.titleFont, color: props.item.titleColor}}
+                    style={{ fontFamily: props.item.titleFont, color: props.item.titleColor }}
                     onDoubleClick={() => setIsEditingTitle(true)}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setIsEditingTitle(true) } }}
                     tabIndex={0}>{title}
                 </h2>
             }
 
-            {!isMinimized &&
-                (isEditingDescription ?
-                    <textarea
-                        className={styles["description"]}
-                        style={{fontFamily: props.item.descriptionFont, color: props.item.descriptionColor}}
-                        value={description}
-                        onKeyDown={(e) => handleClose(e, "description")}
-                        onChange={e => setDescription(e.target.value)}
-                        ref={inputDescriptionRef}
-                        onBlur={() => setIsEditingDescription(false)}
-                        tabIndex={0}>
-                    </textarea> :
-                    <p
-                        onDoubleClick={() => setIsEditingDescription(true)}
-                        style={{fontFamily: props.item.descriptionFont, color: props.item.descriptionColor}}
-                        className={styles["description"]}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setIsEditingDescription(true) } }}
-                        tabIndex={0}>{description}
-                    </p>
-                )}
+            {isEditingDescription ?
+                <textarea
+                    className={styles["description"]}
+                    style={{ fontFamily: props.item.descriptionFont, color: props.item.descriptionColor }}
+                    value={description}
+                    onKeyDown={(e) => handleClose(e, "description")}
+                    onChange={e => setDescription(e.target.value)}
+                    ref={inputDescriptionRef}
+                    onBlur={() => setIsEditingDescription(false)}
+                    tabIndex={0}>
+                </textarea> :
+                <p
+                    onDoubleClick={() => setIsEditingDescription(true)}
+                    style={{ fontFamily: props.item.descriptionFont, color: props.item.descriptionColor }}
+                    className={styles["description"]}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setIsEditingDescription(true) } }}
+                    tabIndex={0}>{description}
+                </p>
+            }
 
-            {!isMinimized && description.length > 0 && <svg
-                className={styles["copy"]} 
-                onMouseDown={() => copy(description)} 
+            {isPostitHover && description.length > 0 && <svg
+                className={styles["copy"]}
+                onMouseDown={() => copy(description)}
                 xmlns="http://www.w3.org/2000/svg" id="Layer_1" height="24" viewBox="0 0 24 24" width="24" data-name="Layer 1"><path d="m13 20a5.006 5.006 0 0 0 5-5v-8.757a3.972 3.972 0 0 0 -1.172-2.829l-2.242-2.242a3.972 3.972 0 0 0 -2.829-1.172h-4.757a5.006 5.006 0 0 0 -5 5v10a5.006 5.006 0 0 0 5 5zm-9-5v-10a3 3 0 0 1 3-3s4.919.014 5 .024v1.976a2 2 0 0 0 2 2h1.976c.01.081.024 9 .024 9a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3-3zm18-7v11a5.006 5.006 0 0 1 -5 5h-9a1 1 0 0 1 0-2h9a3 3 0 0 0 3-3v-11a1 1 0 0 1 2 0z" />
                 <path xmlns="http://www.w3.org/2000/svg" d="m13 20a5.006 5.006 0 0 0 5-5v-8.757a3.972 3.972 0 0 0 -1.172-2.829l-2.242-2.242a3.972 3.972 0 0 0 -2.829-1.172h-4.757a5.006 5.006 0 0 0 -5 5v10a5.006 5.006 0 0 0 5 5zm-9-5v-10a3 3 0 0 1 3-3s4.919.014 5 .024v1.976a2 2 0 0 0 2 2h1.976c.01.081.024 9 .024 9a3 3 0 0 1 -3 3h-6a3 3 0 0 1 -3-3zm18-7v11a5.006 5.006 0 0 1 -5 5h-9a1 1 0 0 1 0-2h9a3 3 0 0 0 3-3v-11a1 1 0 0 1 2 0z" />
             </svg>}

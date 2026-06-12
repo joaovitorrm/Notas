@@ -35,6 +35,7 @@ export class DatabaseConnection {
       description_font TEXT DEFAULT 'arial',
       description_color TEXT DEFAULT 'hsl(0, 0%, 100%)',
       background_color TEXT DEFAULT 'hsl(0, 100%, 50%)',
+      is_minimized INTEGER DEFAULT 0,
       pos_x INTEGER DEFAULT 0,
       pos_y INTEGER DEFAULT 0,
       sort_order INTEGER DEFAULT 0,
@@ -84,6 +85,7 @@ export class DatabaseConnection {
             descriptionFont: row.description_font,
             descriptionColor: row.description_color,
             backgroundColor: row.background_color,
+            isMinimized: row.is_minimized,
             posX: row.pos_x,
             posY: row.pos_y,
             sortOrder: row.sort_order,
@@ -94,8 +96,8 @@ export class DatabaseConnection {
 
     public async saveItem(item: ItemData): Promise<void> {
         await this.db.execute(
-            `INSERT OR REPLACE INTO items (id, tab_id, title, title_font, title_color, description, description_font, description_color, background_color, pos_x, pos_y, sort_order)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+            `INSERT OR REPLACE INTO items (id, tab_id, title, title_font, title_color, description, description_font, description_color, background_color, is_minimized, pos_x, pos_y, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
             [
                 item.id,
                 item.tabId,
@@ -106,6 +108,7 @@ export class DatabaseConnection {
                 item.descriptionFont,
                 item.descriptionColor,
                 item.backgroundColor,
+                item.isMinimized ? 1 : 0,
                 item.posX, 
                 item.posY, 
                 item.sortOrder

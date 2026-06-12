@@ -60,6 +60,7 @@ function App() {
       descriptionColor: "hsl(0, 0%, 100%)",
       descriptionFont: "sans-serif",
       titleFont: "sans-serif",
+      isMinimized: false,
       description: "",
       sortOrder: 1,
       title: "",
