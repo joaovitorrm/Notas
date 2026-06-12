@@ -1,31 +1,28 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ToolBar from "./components/ToolBar/ToolBar";
 import { useDatabase } from './context/DatabaseContext';
 import { ItemData, TabData, TabViewType } from './types';
 import Tabs from './components/ToolBar/Tabs';
-import Postit from './components/Postit/Postit';
 import { useMousePosition } from './hooks/useMouseMove';
 import ContextMenu, { ContextMenuData } from './components/ContextMenu/ContextMenu';
 import trashIcon from "./assets/trash-can.png";
-import palletIcon from "./assets/pallete.png";
-import { useColorPicker } from './hooks/useColorPicker';
+import Postits from './views/Postits';
+import { ViewHandle } from './types/viewHandle';
 
 function App() {
   const { db, ready } = useDatabase();
   const [tabs, setTabs] = useState<TabData[]>([]);
   const [items, setItems] = useState<ItemData[]>([]);
   const [activeTabId, setActiveTabId] = useState<string>("");
-  const currentViewType = useRef<TabViewType>("postit");
+  const [currentViewType, setCurrentViewType] = useState<TabViewType>("postit");
   const defaultTabCreated = useRef(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
   const mouse = useMousePosition();
-
-  const { color, ColorPickerInput, openPicker, setColor } = useColorPicker();
-  const [synchedPostitColor, setSynchedPostitColor] = useState<string>("");
+  const viewRef = useRef<ViewHandle>(null);
 
   useEffect(() => {
     if (!ready) return;
-    db!.getTabsByView(currentViewType.current).then(async fetchedTabs => {
+    db!.getTabsByView(currentViewType).then(async fetchedTabs => {
       if (fetchedTabs.length === 0 && !defaultTabCreated.current) {
         defaultTabCreated.current = true;
         await db!.createTab({
@@ -35,7 +32,7 @@ function App() {
           id: crypto.randomUUID(),
           position: 1
         });
-        const newTabs = await db!.getTabsByView(currentViewType.current);
+        const newTabs = await db!.getTabsByView(currentViewType);
         setTabs(newTabs);
         setActiveTabId(newTabs[0].id);
       } else {
@@ -45,51 +42,59 @@ function App() {
     });
   }, [ready]);
 
+  // ITEM
+
+  const addItem = useCallback((i: ItemData) => {
+    setItems((prev) => [...prev, i])
+  }, []);
+
+  const saveItem = useCallback(async (i: ItemData) => {
+    if (!ready) return;
+    await db!.saveItem(i);
+  }, [ready]);
+
+  const updateItem = useCallback((i: ItemData) => {
+    setItems(prev => prev.map((prevItem) => prevItem.id === i.id ? i : prevItem))
+  }, []);
+
+  const updateAndSaveItem = useCallback(async (i: ItemData) => {
+    updateItem(i);
+    saveItem(i);
+  }, [saveItem]);
+
+  const addAndSaveItem = useCallback((i: ItemData) => {
+    addItem(i);
+    saveItem(i);
+  }, [])
+
+  const deleteItem = useCallback(async (id: string) => {
+    if (!ready) return;
+    await db!.deleteItem(id);
+    setItems((prev) => prev.filter((i) => i.id !== id));
+  }, [ready, activeTabId]);
+
+  // TABS
+
   useEffect(() => {
     if (activeTabId === "") return;
     db!.getItemsByTab(activeTabId).then(setItems);
   }, [activeTabId]);
 
-  const addNote = useCallback(async (posX: number = 20, posY: number = 20) => {
-    if (activeTabId === "") return;
-    await db!.saveItem({
-      id: crypto.randomUUID(),
-      tabId: activeTabId,
-      backgroundColor: "hsl(0, 100%, 50%)",
-      titleColor: "hsl(0, 0%, 100%)",
-      descriptionColor: "hsl(0, 0%, 100%)",
-      descriptionFont: "sans-serif",
-      titleFont: "sans-serif",
-      isMinimized: false,
-      description: "",
-      sortOrder: 1,
-      title: "",
-      posX,
-      posY
-    });
-    db!.getItemsByTab(activeTabId).then(setItems);
-  }, [activeTabId]);
-
-  const saveItems = useCallback(async (i: ItemData) => {
+  const createTab = useCallback(async () => {
     if (!ready) return;
-    await db!.saveItem(i);
-  }, [ready]);
-
-  const saveTab = useCallback(async (t: TabData) => {
-    if (!ready) return;
-    await db!.saveTab(t);
-  }, [ready]);
+    const pos = tabs.length + 1;
+    await db!.createTab({ color: "", id: crypto.randomUUID(), position: pos, title: "Página " + pos, viewType: currentViewType });
+    db!.getTabsByView(currentViewType).then(setTabs);
+  }, [ready, currentViewType, tabs.length]);
 
   const setTabId = useCallback((id: string) => {
     setActiveTabId(id);
   }, []);
 
-  const createTab = useCallback(async () => {
+  const saveTab = useCallback(async (t: TabData) => {
     if (!ready) return;
-    const pos = tabs.length + 1;
-    await db!.createTab({ color: "", id: crypto.randomUUID(), position: pos, title: "Página " + pos, viewType: currentViewType.current });
-    db!.getTabsByView(currentViewType.current).then(setTabs);
-  }, [ready, currentViewType.current, tabs.length]);
+    await db!.saveTab(t);
+  }, [ready]);
 
   const removeTab = useCallback(async (id: string) => {
     if (!ready) return;
@@ -97,7 +102,7 @@ function App() {
     let isActualTab = activeTabId === id;
 
     await db!.deleteTab(id);
-    const newTabs = await db!.getTabsByView(currentViewType.current);
+    const newTabs = await db!.getTabsByView(currentViewType);
 
     if (newTabs.length === 0) {
       setTabs([]);
@@ -108,12 +113,6 @@ function App() {
 
     setTabs(newTabs);
     if (isActualTab) setActiveTabId(newTabs[0].id);
-  }, [ready, activeTabId])
-
-  const deleteItem = useCallback(async (id: string) => {
-    if (!ready) return;
-    await db!.deleteItem(id);
-    db!.getItemsByTab(activeTabId).then(setItems);
   }, [ready, activeTabId]);
 
   const openContextMenu = useCallback((e: React.MouseEvent, x: number, y: number, actions: ContextMenuData['actions']) => {
@@ -124,21 +123,23 @@ function App() {
 
   const closeContextMenu = useCallback(() => setContextMenu(null), []);
 
-  useEffect(() => {
-    if (!synchedPostitColor) return;
-    const foundItem = items.find((i) => synchedPostitColor === i.id);
-    if (!foundItem) return;
-    const updated = { ...foundItem, backgroundColor: color };
-    setItems(prev => prev.map(i => i.id === updated.id ? updated : i));
-    saveItems(updated);
-  }, [color, synchedPostitColor])
-
-  const handlePostitContextMenu = useCallback((e: React.MouseEvent, x: number, y: number, item: ItemData) => {
-    openContextMenu(e, x, y, [
-      { icon: palletIcon, gridPos: "a", onClick: () => { setColor(item.backgroundColor); openPicker(x, y); setSynchedPostitColor(item.id) } },
-      { icon: trashIcon, gridPos: "b", onClick: () => deleteItem(item.id) },
-    ]);
-  }, [openPicker, deleteItem, setColor]);
+  const currentView = useMemo(() => {
+    switch (currentViewType) {
+      case "postit": return <Postits
+        deleteItem={deleteItem}
+        saveItem={saveItem}
+        updateItem={updateItem}
+        updateAndSaveItem={updateAndSaveItem}
+        addAndSaveItem={addAndSaveItem}
+        addItem={addItem}
+        items={items}
+        mouse={mouse}
+        openContextMenu={openContextMenu}
+        tabId={activeTabId}
+        ref={viewRef}
+      />;
+    }
+  }, [currentViewType, items, activeTabId, deleteItem, saveItem, updateItem, addItem, mouse, openContextMenu]);
 
   if (!ready) return <p>Carregando...</p>;
 
@@ -159,25 +160,7 @@ function App() {
         <input type="text" placeholder='Pesquisar nota' />
       </div>
 
-      <div className='main-view' onContextMenu={(e) => {
-        const { x, y } = mouse.getPosition()
-        openContextMenu(e, x, y, [{
-          icon: "", label: "➕", gridPos: "a", onClick: () => addNote(x, y)
-        }])
-      }}>
-        {items.map(i => (
-          <Postit
-            item={i}
-            key={i.id}
-            mouse={mouse}
-            onDelete={deleteItem}
-            onUpdate={saveItems}
-            onContextMenu={(e, x, y) => handlePostitContextMenu(e, x, y, i)}
-          />
-        ))}
-      </div>
-
-      {ColorPickerInput}
+      {currentView}
 
       <Tabs
         activeId={activeTabId}
@@ -190,7 +173,7 @@ function App() {
         ])}
       />
 
-      <ToolBar onAdd={addNote} />
+      {<ToolBar onAdd={() => viewRef.current?.addNote()} />}
     </main>
   );
 }
